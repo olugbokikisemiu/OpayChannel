@@ -16,10 +16,8 @@ This library consist of methods that will be needed across Opay channel micro-se
     
 * http
     * Class OkHttpUtil.java
-        * Method String doGetHttpRequest(String url)
-        * Method String doFormGetRequest(String url, String req, Map<String,String> mapHeader)
-        * Method String doPostHttpRequest(String url, String json)
-        * Method String doPostHttpsRequest(String url, String json, Map<String, String> mapHeader)    
+        * Method String doGetHttpsRequest(String url, String transactionId, Map<String, String> mapHeader)
+        * Method String doPostHttpsRequest(String url, String json, String mediaType, String transactionId, Map<String, String> mapHeader)  
 
 * util
     * Common.java  
