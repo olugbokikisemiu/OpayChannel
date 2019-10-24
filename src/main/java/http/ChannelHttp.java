@@ -1,5 +1,7 @@
 package http;
 
+import dao.DataLayer;
+import dao.model.ChannelJournal;
 import okhttp3.*;
 
 import javax.net.ssl.*;
@@ -9,38 +11,67 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 
-public class OkHttpUtil {
+public class ChannelHttp {
 
-    public static String doGetHttpsRequest(String url, Map<String,String> mapHeader)
+    private String db;
+    private String url;
+    private String user;
+    private String password;
+
+    public ChannelHttp(String db, String url, String user, String password) {
+        this.db = db;
+        this.url = url;
+        this.user = user;
+        this.password = password;
+    }
+
+
+
+
+    public String doGetHttpsRequest(String url, String transactionId, Map<String, String> mapHeader)
             throws IOException {
 
         Request.Builder builder = new Request.Builder().url(url);
-        if (mapHeader != null){
+        if (mapHeader != null) {
             mapHeader.forEach(builder::addHeader);
         }
 
         Request request = builder.get().build();
 
-        OkHttpClient client = OkHttpUtil.getUnsafeOkHttpClient();
+        OkHttpClient client = ChannelHttp.getUnsafeOkHttpClient();
 
-        Response response = client.newCall(request).execute();
+        String response = client.newCall(request).execute().body().string();
 
-        return response.body().string();
+        ChannelJournal channel = new ChannelJournal();
+        channel.setTransactionID(transactionId);
+        channel.setRaw_request(url);
+        channel.setRaw_response(response);
+
+        new DataLayer().PersistJournal(this.db, this.url, this.user, this.password, channel);
+
+        return response;
     }
 
-    public static String doPostHttpsRequest(String url, String json, String mediaType, Map<String, String> mapHeader)
+    public String doPostHttpsRequest(String url, String json, String mediaType, String transactionId, Map<String, String> mapHeader)
             throws IOException {
         Request.Builder builder = new Request.Builder().url(url);
-        if (mapHeader != null){
+        if (mapHeader != null) {
             mapHeader.forEach(builder::addHeader);
         }
         Request request = builder.post(RequestBody.create(MediaType.parse(mediaType), json)).build();
 
-        OkHttpClient client = OkHttpUtil.getUnsafeOkHttpClient();
+        OkHttpClient client = ChannelHttp.getUnsafeOkHttpClient();
 
-        Response response = client.newCall(request).execute();
+        String response = client.newCall(request).execute().body().string();
 
-        return response.body().string();
+        ChannelJournal channel = new ChannelJournal();
+        channel.setTransactionID(transactionId);
+        channel.setRaw_request(url);
+        channel.setRaw_response(response);
+
+        new DataLayer().PersistJournal(this.db, this.url, this.user, this.password, channel);
+
+        return response;
     }
 
 
@@ -71,7 +102,8 @@ public class OkHttpUtil {
             final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
 
             OkHttpClient.Builder builder = new OkHttpClient.Builder();
-            builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0]);;
+            builder.sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0]);
+            ;
             builder.hostnameVerifier(new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostname, SSLSession session) {
@@ -84,7 +116,6 @@ public class OkHttpUtil {
             throw new RuntimeException(e);
         }
     }
-
 
 
 }
